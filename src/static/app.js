@@ -519,6 +519,9 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
+    const descriptionEscaped = details.description.replace(/"/g, "&quot;");
+    const scheduleEscaped = formattedSchedule.replace(/"/g, "&quot;");
+
     activityCard.innerHTML = `
       ${tagHtml}
       <h4>${name}</h4>
@@ -569,6 +572,22 @@ document.addEventListener("DOMContentLoaded", () => {
         `
         }
       </div>
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <button class="share-btn twitter-btn"
+          data-activity="${name}"
+          data-description="${descriptionEscaped}"
+          data-schedule="${scheduleEscaped}"
+          title="Share on Twitter/X">𝕏</button>
+        <button class="share-btn whatsapp-btn"
+          data-activity="${name}"
+          data-description="${descriptionEscaped}"
+          data-schedule="${scheduleEscaped}"
+          title="Share on WhatsApp">💬</button>
+        <button class="share-btn copy-btn"
+          data-activity="${name}"
+          title="Copy link">🔗</button>
+      </div>
     `;
 
     // Add click handlers for delete buttons
@@ -586,6 +605,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add click handlers for share buttons
+    const shareButtons = activityCard.querySelectorAll(".share-btn");
+    shareButtons.forEach((button) => {
+      button.addEventListener("click", handleShare);
+    });
 
     activitiesList.appendChild(activityCard);
   }
@@ -797,6 +822,42 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
     );
+  }
+
+  // Handle social sharing
+  function handleShare(event) {
+    const btn = event.currentTarget;
+    const activityName = btn.dataset.activity;
+    // dataset values are automatically HTML-decoded by the browser (e.g. &quot; -> ")
+    const description = btn.dataset.description || "";
+    const schedule = btn.dataset.schedule || "";
+    const pageUrl = window.location.href;
+    const shareText = `Check out "${activityName}" at Mergington High School! ${description} Schedule: ${schedule}`;
+
+    if (btn.classList.contains("twitter-btn")) {
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(pageUrl)}`;
+      window.open(twitterUrl, "_blank", "noopener,noreferrer");
+    } else if (btn.classList.contains("whatsapp-btn")) {
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " " + pageUrl)}`;
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    } else if (btn.classList.contains("copy-btn")) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(pageUrl).then(() => {
+          showMessage("Link copied to clipboard!", "success");
+        }).catch(() => {
+          showMessage("Could not copy link.", "error");
+        });
+      } else {
+        // Legacy fallback for browsers that don't support the Clipboard API
+        const textArea = document.createElement("textarea");
+        textArea.value = pageUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy"); // deprecated but used as last-resort fallback
+        document.body.removeChild(textArea);
+        showMessage("Link copied to clipboard!", "success");
+      }
+    }
   }
 
   // Show message function
